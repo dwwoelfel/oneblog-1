@@ -14,9 +14,8 @@ import formatDate from 'date-fns/format';
 import EmojiIcon from './emojiIcon';
 import AddIcon from './addIcon';
 import Tippy, {TippyGroup} from '@tippy.js/react';
-import 'tippy.js/themes/light-border.css';
-import Link from './PreloadLink';
-import {postRoute} from './App';
+// import 'tippy.js/themes/light-border.css';
+import Link from 'next/link';
 import GitHubLoginButton from './GitHubLoginButton';
 import {NotificationContext} from './Notifications';
 import {Box} from 'grommet/components/Box';
@@ -28,8 +27,7 @@ import {sentenceCase} from 'sentence-case';
 import unified from 'unified';
 import parse from 'remark-parse';
 import imageUrl from './imageUrl';
-import {Helmet} from 'react-helmet';
-import PreloadCacheContext from './PreloadCacheContext';
+import {query as postRootQuery} from './PostRoot';
 
 import type {Post_post} from './__generated__/Post_post.graphql';
 
@@ -89,12 +87,17 @@ const removeReactionMutation = graphql`
 function reactionUpdater({store, viewerHasReacted, subjectId, content}) {
   const reactionGroup = store
     .get(subjectId)
-    .getLinkedRecords('reactionGroups')
-    .find(r => r.getValue('content') === content);
-  reactionGroup.setValue(viewerHasReacted, 'viewerHasReacted');
-  const users = reactionGroup.getLinkedRecord('users', {first: 11});
-  users.setValue(
-    Math.max(0, users.getValue('totalCount') + (viewerHasReacted ? 1 : -1)),
+    ?.getLinkedRecords('reactionGroups')
+    ?.find(r => r?.getValue('content') === content);
+
+  reactionGroup?.setValue(viewerHasReacted, 'viewerHasReacted');
+  const users = reactionGroup?.getLinkedRecord('users', {first: 11});
+  users?.setValue(
+    Math.max(
+      0,
+      // $FlowFixMe
+      (users?.getValue('totalCount') ?? 0) + (viewerHasReacted ? 1 : -1),
+    ),
     'totalCount',
   );
 }
@@ -375,12 +378,12 @@ export const ReactionBar = ({
   );
 };
 
-function slugify(s: string): string {
+export function slugify(s: string): string {
   return lowerCase(s)
     .replace(/\s+/g, '-') // Replace spaces with -
     .replace(/&/g, '-and-') // Replace & with 'and'
-    .replace(/[^\w\-]+/g, '') // Remove all non-word characters
-    .replace(/\-\-+/g, '-') // Replace multiple - with single -
+    .replace(/[^\w-]+/g, '') // Remove all non-word characters
+    .replace(/--+/g, '-') // Replace multiple - with single -
     .trimStart() // Trim from start of text
     .trimEnd(); // Trim from end of text
 }
@@ -440,22 +443,17 @@ export function computePostDate(post: {
 
 export const Post = ({relay, post, context}: Props) => {
   const environment = useRelayEnvironment();
-  const cache = React.useContext(PreloadCacheContext);
+  const postDate = React.useMemo(() => computePostDate(post), [post]);
+  const number = post.number;
+
   React.useEffect(() => {
     if (context === 'list') {
-      postRoute.preload(cache, environment, {issueNumber: post.number});
+      fetchQuery(environment, postRootQuery, {issueNumber: number}).catch(e => {
+        console.error('error preloading query', e);
+      });
     }
-  }, [cache, environment, context]);
-  const {error: notifyError} = React.useContext(NotificationContext);
-  const [showReactionPopover, setShowReactionPopover] = React.useState(false);
-  const postDate = React.useMemo(() => computePostDate(post), [post]);
-  const popoverInstance = React.useRef();
-  const {loginStatus, login} = React.useContext(UserContext);
-  const isLoggedIn = loginStatus === 'logged-in';
+  }, [environment, context, number]);
 
-  const usedReactions = (post.reactionGroups || []).filter(
-    g => g.users.totalCount > 0,
-  );
   const authors = post.assignees.nodes || [];
   return (
     <PostBox>
@@ -464,8 +462,8 @@ export const Post = ({relay, post, context}: Props) => {
           {context === 'details' ? (
             post.title
           ) : (
-            <Link style={{color: 'inherit'}} to={postPath({post})}>
-              {post.title}
+            <Link href="/post/[...slug]" as={postPath({post})} shallow={true}>
+              <a style={{color: 'inherit'}}>{post.title}</a>
             </Link>
           )}
         </Heading>
