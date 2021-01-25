@@ -21,7 +21,6 @@ To create the token that's stored with the persisted query, you'll need to get a
 You'll also need to get an API token for OneGraph itself to store persisted queries. Go to the "Persisted queries" tab on the OneGraph dashboard, scroll down, and click "Create token". This will create a scoped token for your app that can create persisted queries on your behalf. Set the token as `OG_DASHBOARD_ACCESS_TOKEN` in `.env`.
 
 Remove the generated files (they're tied to the OneGraph app they were generated with)
-
 ```
 yarn relay:clean
 # which runs rm -r src/__generated__
