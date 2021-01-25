@@ -58,6 +58,7 @@ The project will load at [http://localhost:3000](http://localhost:3000).
 
 ## Deploying
 
+
 The project comes with setups for deploying to Google's Firebase, Zeit's Now, Netlify, and Fly.io.
 
 For each of these, you'll have to add the site that you're deploying to on the CORS origins on the OneGraph dashboard.
