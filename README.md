@@ -199,3 +199,5 @@ When a request comes in to the server, the server creates a mock Relay environme
 React renders the app to a string, which is sent to the client.
 
 On the client, React rehydates the app. To prevent Relay from showing a loading state, we inject the serialized record source in a global `window.__RELAY_BOOTSTRAP_DATA__` variable. That data is stored in the environment before Relay makes its first query. The `dataFrom` prop (which will move to `fetchConfig` in the next Relay release) on the QueryRenderer is set to "STORE_THEN_NETWORK" so that it uses the data from the store instead of showing a loading state.
+
+
